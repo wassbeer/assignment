@@ -4,7 +4,10 @@
   "description": "Full webpack configured Node.js, Express, Socket.io, React and Less project",
   "main": "./src/server/index.js",
   "scripts": {
-    "start": "NODE_ENV=development && nodemon src/server/main.js",
+    "start": "SET NODE_ENV=development && nodemon src/server/main.js",
+    "http": "SET NODE_ENV=development && nodemon src/server/main.js",
+    "tcp": "nodemon src/server/tcp.js",
+    "consul": "consul agent -dev -config-dir=/etc/consul.d",
     "build": "NODE_ENV=production && npm run clean && webpack -p",
     "test": "",
     "clean": "rimraf dist"
@@ -43,11 +46,20 @@
   },
   "dependencies": {
     "config": "^1.26.2",
+    "consul": "^0.30.0",
     "csv-parse": "^2.0.0",
+    "eslint": "^4.6.0",
+    "eslint-config-standard": "^10.2.1",
+    "eslint-plugin-import": "^2.7.0",
+    "eslint-plugin-node": "^5.1.1",
+    "eslint-plugin-promise": "^3.5.0",
+    "eslint-plugin-standard": "^3.0.1",
     "express": "^4.16.2",
+    "json-socket": "^0.3.0",
     "less": "^2.7.3",
     "react": "^16.0.0",
     "react-dom": "^16.0.0",
+    "request": "^2.83.0",
     "socket.io": "^2.0.4",
     "socket.io-client": "^2.0.4",
     "underscore": "^1.8.3"
