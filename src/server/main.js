@@ -1,19 +1,27 @@
-const express  = require('express')
-const debug    = require('debug')('server')
-const config   = require('config')
-const path     = require('path')
-const http     = require('http')
-const socketio = require('socket.io')
+const express = require('express'),
+	debug = require('debug')('server'),
+	config = require('config'),
+	path = require('path'),
+	http = require('http'),
+	socketio = require('socket.io'),
+	request = require('request');
 
-const creatVehicle = require('./lib/vehicle')
+	creatVehicle = require('./lib/vehicle'),
 
-const app = express()
-const server = http.Server(app)
-const io  = socketio.listen(server)
+	app = express(),
+	server = http.Server(app),
+	io = socketio.listen(server);
+
+// // Testing consul service
+// request('http://localhost:8500/v1/agent/services', (err, response, body) => {
+// 	if (response) { // retreiving port
+// 		console.log(body)
+// 	}
+// });
 
 // Start vehicle data
 const startVehicle = () => {
-	return creatVehicle({file: path.resolve(__dirname, '../../meta/route.csv')})
+	return creatVehicle({ file: path.resolve(__dirname, '../../meta/route.csv') })
 }
 
 // Init vehicle
@@ -33,7 +41,7 @@ vehicle.on('end', () => vehicle = startVehicle())
 
 // On client connection
 
-io.on('connection', function(socket){
+io.on('connection', function(socket) {
 	sockets.push(socket)
 	console.log('Client connected. Connected:', sockets.length)
 
@@ -49,9 +57,9 @@ io.on('connection', function(socket){
 
 if (process.env.NODE_ENV !== 'production') {
 	const webpackHotMiddleware = require('webpack-hot-middleware')
-	const webpackMiddleware    = require('webpack-dev-middleware')
-	const webpackConfig        = require('../../webpack.config.js')
-	const webpack              = require('webpack')
+	const webpackMiddleware = require('webpack-dev-middleware')
+	const webpackConfig = require('../../webpack.config.js')
+	const webpack = require('webpack')
 
 	const compiler = webpack(webpackConfig)
 
@@ -79,9 +87,7 @@ if (process.env.NODE_ENV !== 'production') {
 			res.end()
 		})
 	})
-}
-
-else {
+} else {
 	app.use(express.static('dist'))
 	app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'dist/index.html')))
 }
