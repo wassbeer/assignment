@@ -21,10 +21,10 @@ function makeConnectionWithTcpServer() {
 		if (err) {
 			console.log(err);
 		}
-		const services = JSON.parse(body),
+		let services = JSON.parse(body),
 			serviceNames = Object.keys(services);
 		if (serviceNames.length) { // Checking existence of service(s)
-			tcpPort = services[serviceNames.length].Port;
+			tcpPort = services[serviceNames[serviceNames.length - 1]].Port;
 			tcpClient.connect(tcpPort, '127.0.0.1', (err) => {
 				if (err) { console.log(err); }
 				console.log('TCP client connected to TCP server on port ' + tcpPort);
@@ -41,7 +41,7 @@ function connectTcpEventHandler() {
 }
 
 function vehicleDataEventHandler(vehicleData) {
-	console.log(vehicleData);
+	// console.log(vehicleData);
 	io.sockets.emit('state', vehicleData);
 };
 
@@ -118,5 +118,6 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Create server listener
-const port = 4934;
-server.listen(port, () => console.log(`Server listening on port ${port}`));
+server.listen(() => {
+	console.log('HTTP server opened on', server.address());
+})

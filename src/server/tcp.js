@@ -6,19 +6,23 @@ const net = require('net'),
 	path = require('path');
 
 // Server variables
-let server = net.createServer(),
-	tcpPort = 8888,
-	serviceNumber = 1,
-	webJson = { 'Name': `${serviceNumber}`, 'Address': '127.0.0.1', 'Port': tcpPort };
+let server = net.createServer();
 
-// Registering service in Consul
-request({ url: 'http://localhost:8500/v1/agent/service/register', method: 'PUT', json: webJson }, (err, request, body) => {
-	if (err) { console.log(err); }
-	server.listen(tcpPort, '127.0.0.1', (err) => {
-		if (err) { throw err; };
-		console.log('TCP server listing on port ' + tcpPort);
+function launchTcpServer() {
+	server.listen(() => {
+		console.log('TCP server opened server on', server.address());
+		let tcpPort = server.address().port,
+		serviceNumber = tcpPort,
+		webJson = { 'Name': `${serviceNumber}`, 'Address': '127.0.0.1', 'Port': tcpPort, 'EnableTagOverride': false };
+		request({ url: 'http://localhost:8500/v1/agent/service/register', method: 'PUT', json: webJson }, (err, request, body) => {
+			if (err) { console.log(err) }
+				console.log("registered service")
+		});
 	});
-});
+}
+
+// Launching server
+launchTcpServer();
 
 // Start vehicle data
 const startVehicle = () => {
@@ -35,7 +39,6 @@ vehicle.on('end', () => vehicle = startVehicle());
 server.on('connection', (socket) => {
 	socket = new jsonSocket(socket);
 	vehicle.on('state', (state) => {
-		console.log(state);
 		socket.sendMessage(
 			state
 		);
