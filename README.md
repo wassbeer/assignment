@@ -33,7 +33,7 @@ Node.js modules:
 * net
 * http 
 
-#### Back-end - Requirements [met]
+## Assignment Requirements Developed
 
 Obligatory:
 * Your modified back-end needs three services, a HTTP server (consuming the data), a TCP server (production the data) and the (third-party) service discovery service
@@ -43,11 +43,3 @@ Obligatory:
 
 Optional:
 * Make the HTTP server reconnect with the TCP server after the connection is dropped (implement a reconnection strategy)
-
-#### Back-end - Up for more? [under construction]
-
-* Run more vehicles by increasing the number of instances of your Vehicle Data Generator service (and stream them to the HTTP server)
-* Allow multiple HTTP servers to connect to your vehicle TCP server(s)
-* Improve the Vehicle.js module! (it lacks re-reading it's source file after reading through it all)
-* Dockerize all your services
-* Add some data-visualisation in the front-end part to actually see these vehicles drive on a map using the GPS location

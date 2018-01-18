@@ -1,88 +1,79 @@
+// dependencies
 const express = require('express'),
 	debug = require('debug')('server'),
-	config = require('config'),
 	path = require('path'),
 	http = require('http'),
 	socketio = require('socket.io'),
 	net = require('net'),
 	request = require('request'),
-	jsonSocket = require('json-socket'),
-	creatVehicle = require('./lib/vehicle'),
+	JsonSocket = require('json-socket'),
 
+	// application
 	app = express(),
 	server = http.Server(app),
-	io = socketio.listen(server);
+	io = socketio.listen(server),
+	sockets = [];
 
-let tcpClient = new jsonSocket(new net.Socket()); //Decorate a standard net.Socket with JsonSocket
+// TCP Client
 
+// Initiate TCP Client
+let tcpClient = new JsonSocket(new net.Socket());
+
+// Retreiving port from Consul
 request('http://localhost:8500/v1/agent/services', (err, response, body) => {
+	if (err) {
+		console.log(err);
+	}
 	if (response) {
-		// retreiving port
 		const services = JSON.parse(body),
 			serviceNames = Object.keys(services),
 			tcpPort = services[serviceNames.length].Port;
+		// Connect the TCP client on that port
 		tcpClient.connect(tcpPort, '127.0.0.1', (err) => {
-			if (err) { console.log(err) }
-			console.log('TCP client connected to TCP server')
+			if (err) { console.log(err); }
+			console.log('TCP client connected to TCP server');
 		});
 	};
 });
 
-tcpClient.on('data', function(data) {
+// Message event handler
+tcpClient.on('message', (data) => {
 	console.log('Received: ' + data);
-	// tcpClient.destroy(); // kill tcpClient after server's response
+	io.sockets.emit('state', data);
 });
 
-tcpClient.on('close', function() {
+// Close event handler
+tcpClient.on('close', () => {
 	console.log('Connection closed');
 });
 
-// Start vehicle data
-const startVehicle = () => {
-	return creatVehicle({ file: path.resolve(__dirname, '../../meta/route.csv') })
-}
+// HTTP Server
 
-// Init vehicle
-let vehicle = startVehicle()
-const sockets = []
-
-// If new datapoint, emit it to the socket
-vehicle.on('state', (state) => {
-	// sockets.forEach((socket) => {
-	// 	socket.emit('state', state)
-	// })
-	io.sockets.emit('state', state)
-})
-
-// Once the vehicle went through all the data, start the data again from the start
-vehicle.on('end', () => vehicle = startVehicle())
-
-// On client connection
-
-io.on('connection', function(socket) {
-	sockets.push(socket)
-	console.log('Client connected. Connected:', sockets.length)
+// Connection event handler
+io.on('connection', (socket) => {
+	sockets.push(socket);
+	console.log('Client connected. Connected:', sockets.length);
 
 	socket.once('disconnect', () => {
-		sockets.splice(sockets.findIndex((sckt) => sckt.id === socket.id), 1)
-		console.log('Client disconnected. Connected:', sockets.length)
-	})
+		sockets.splice(sockets.findIndex((sckt) => sckt.id === socket.id), 1);
+		console.log('Client disconnected. Connected:', sockets.length);
+	});
 
-	// Let the client socket now that we're ready
-	socket.emit('ready')
+	// Let the client socket know that we're ready
+	socket.emit('ready');
 });
 
+// Webpack
 
 if (process.env.NODE_ENV !== 'production') {
-	const webpackHotMiddleware = require('webpack-hot-middleware')
-	const webpackMiddleware = require('webpack-dev-middleware')
-	const webpackConfig = require('../../webpack.config.js')
-	const webpack = require('webpack')
-
-	const compiler = webpack(webpackConfig)
+	const webpackHotMiddleware = require('webpack-hot-middleware'),
+		webpackMiddleware = require('webpack-dev-middleware'),
+		webpackConfig = require('../../webpack.config.js'),
+		webpack = require('webpack'),
+		compiler = webpack(webpackConfig);
 
 	// Middlewares for webpack
-	debug('Enabling webpack dev and HMR middlewares...')
+	debug('Enabling webpack dev and HMR middlewares...');
 	app.use(webpackMiddleware(compiler, {
 		hot: true,
 		stats: {
@@ -91,24 +82,25 @@ if (process.env.NODE_ENV !== 'production') {
 			chunksModules: false
 		},
 		historyApiFallback: true
-	}))
+	}));
 
-	app.use(webpackHotMiddleware(compiler, { path: '/__webpack_hmr' }))
+	app.use(webpackHotMiddleware(compiler, { path: '/__webpack_hmr' }));
 
 	app.use('*', (req, res, next) => {
-		const filename = path.join(compiler.outputPath, 'index.html')
+		const filename = path.join(compiler.outputPath, 'index.html');
 		compiler.outputFileSystem.readFile(filename, (err, result) => {
 			if (err)
-				return next(err)
-			res.set('content-type', 'text/html')
-			res.send(result)
-			res.end()
-		})
-	})
+				return next(err);
+			res.set('content-type', 'text/html');
+			res.send(result);
+			res.end();
+		});
+	});
 } else {
-	app.use(express.static('dist'))
-	app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'dist/index.html')))
+	app.use(express.static('dist'));
+	app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'dist/index.html')));
 }
 
-const port = config.server.port
-server.listen(process.env.PORT || port, () => console.log(`Server listening on port ${port}`))
+// Create server listener
+const port = 4932;
+server.listen(port, () => console.log(`Server listening on port ${port}`));
