@@ -1,17 +1,13 @@
 // Dependencies
 const net = require('net'),
-	request = require('request');
+	request = require('request'),
+	jsonSocket = require('json-socket');
 
-// Server variables
-let server = net.createServer(
-	// function(socket) {
-	// 	socket.write('Echo server\r\n');
-	// 	socket.pipe(socket);
-	// })
-),
-	tcpPort = 8888,
-	serviceNumber = 1,
-	webJson = { 'Name': `${serviceNumber}`, 'Address': '127.0.0.1', 'Port': tcpPort };
+	// Server variables
+	let server = net.createServer(),
+		tcpPort = 8888,
+		serviceNumber = 1,
+		webJson = { 'Name': `${serviceNumber}`, 'Address': '127.0.0.1', 'Port': tcpPort };
 
 // Registering service in Consul
 request({ url: 'http://localhost:8500/v1/agent/service/register', method: 'PUT', json: webJson }, (err, request, body) => {
@@ -20,4 +16,15 @@ request({ url: 'http://localhost:8500/v1/agent/service/register', method: 'PUT',
 		if (err) { throw err };
 		console.log("TCP server listing on port " + tcpPort)
 	});
+});
+
+// connection with client event handler 
+server.on('connection', (socket) => {
+	socket = new jsonSocket(socket);
+	// vehicle.on('state', (state) => {
+	// 	console.log(state)
+	socket.sendMessage(
+		// state
+		"data from TCP server via JSON-socket"
+	);
 });

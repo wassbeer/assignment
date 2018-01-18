@@ -6,13 +6,14 @@ const express = require('express'),
 	socketio = require('socket.io'),
 	net = require('net'),
 	request = require('request'),
+	jsonSocket = require('json-socket'),
 	creatVehicle = require('./lib/vehicle'),
 
 	app = express(),
 	server = http.Server(app),
 	io = socketio.listen(server);
 
-let tcpClient = new net.Socket();
+let tcpClient = new jsonSocket(new net.Socket()); //Decorate a standard net.Socket with JsonSocket
 
 request('http://localhost:8500/v1/agent/services', (err, response, body) => {
 	if (response) {
@@ -22,7 +23,6 @@ request('http://localhost:8500/v1/agent/services', (err, response, body) => {
 			tcpPort = services[serviceNames.length].Port;
 		tcpClient.connect(tcpPort, '127.0.0.1', (err) => {
 			if (err) { console.log(err) }
-		// tcpClient.write('Hello, server! Love, Client.');
 			console.log('TCP client connected to TCP server')
 		});
 	};
@@ -30,7 +30,7 @@ request('http://localhost:8500/v1/agent/services', (err, response, body) => {
 
 tcpClient.on('data', function(data) {
 	console.log('Received: ' + data);
-	tcpClient.destroy(); // kill tcpClient after server's response
+	// tcpClient.destroy(); // kill tcpClient after server's response
 });
 
 tcpClient.on('close', function() {
