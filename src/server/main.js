@@ -4,20 +4,38 @@ const express = require('express'),
 	path = require('path'),
 	http = require('http'),
 	socketio = require('socket.io'),
-	request = require('request');
-
+	net = require('net'),
+	request = require('request'),
 	creatVehicle = require('./lib/vehicle'),
 
 	app = express(),
 	server = http.Server(app),
 	io = socketio.listen(server);
 
-// // Testing consul service
-// request('http://localhost:8500/v1/agent/services', (err, response, body) => {
-// 	if (response) { // retreiving port
-// 		console.log(body)
-// 	}
-// });
+let tcpClient = new net.Socket();
+
+request('http://localhost:8500/v1/agent/services', (err, response, body) => {
+	if (response) {
+		// retreiving port
+		const services = JSON.parse(body),
+			serviceNames = Object.keys(services),
+			tcpPort = services[serviceNames.length].Port;
+		tcpClient.connect(tcpPort, '127.0.0.1', (err) => {
+			if (err) { console.log(err) }
+		// tcpClient.write('Hello, server! Love, Client.');
+			console.log('TCP client connected to TCP server')
+		});
+	};
+});
+
+tcpClient.on('data', function(data) {
+	console.log('Received: ' + data);
+	tcpClient.destroy(); // kill tcpClient after server's response
+});
+
+tcpClient.on('close', function() {
+	console.log('Connection closed');
+});
 
 // Start vehicle data
 const startVehicle = () => {
