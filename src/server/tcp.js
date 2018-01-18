@@ -16,7 +16,7 @@ request({ url: 'http://localhost:8500/v1/agent/service/register', method: 'PUT',
 	if (err) { console.log(err); }
 	server.listen(tcpPort, '127.0.0.1', (err) => {
 		if (err) { throw err; };
-		console.log ('TCP server listing on port ' + tcpPort);
+		console.log('TCP server listing on port ' + tcpPort);
 	});
 });
 

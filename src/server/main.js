@@ -16,52 +16,68 @@ const express = require('express'),
 
 // TCP Client
 
-// Initiate TCP Client
-let tcpClient = new JsonSocket(new net.Socket());
-
-// Retreiving port from Consul
-request('http://localhost:8500/v1/agent/services', (err, response, body) => {
-	if (err) {
-		console.log(err);
-	}
-	if (response) {
+function makeConnectionWithTcpServer() {
+	request('http://localhost:8500/v1/agent/services', (err, response, body) => {
+		if (err) {
+			console.log(err);
+		}
 		const services = JSON.parse(body),
-			serviceNames = Object.keys(services),
+			serviceNames = Object.keys(services);
+		if (serviceNames.length) { // Checking existence of service(s)
 			tcpPort = services[serviceNames.length].Port;
-		// Connect the TCP client on that port
-		tcpClient.connect(tcpPort, '127.0.0.1', (err) => {
-			if (err) { console.log(err); }
-			console.log('TCP client connected to TCP server');
-		});
-	};
-});
+			tcpClient.connect(tcpPort, '127.0.0.1', (err) => {
+				if (err) { console.log(err); }
+				console.log('TCP client connected to TCP server on port ' + tcpPort);
+			});
+		} else { // Keep trying to retreive a service
+			console.log("There is no service registered yet");
+			setTimeout(makeConnectionWithTcpServer, 4000);
+		}
+	});
+}
 
-// Message event handler
-tcpClient.on('message', (data) => {
-	console.log('Received: ' + data);
-	io.sockets.emit('state', data);
-});
+function connectTcpEventHandler() {
+	console.log('connected');
+}
 
-// Close event handler
-tcpClient.on('close', () => {
-	console.log('Connection closed');
-});
+function vehicleDataEventHandler(vehicleData) {
+	console.log(vehicleData);
+	io.sockets.emit('state', vehicleData);
+};
+
+function closeEventHandler() {
+	console.log('Reconnecting...');
+	setTimeout(makeConnectionWithTcpServer, 4000);
+}
+
+function errorEventHandler(err) {
+	console.log(err);
+}
+
+// create socket and bind callbacks
+let tcpClient = new JsonSocket(new net.Socket());
+tcpClient.on('connect', connectTcpEventHandler);
+tcpClient.on('message', vehicleDataEventHandler);
+tcpClient.on('close', closeEventHandler);
+tcpClient.on('error', errorEventHandler);
+
+// Make Connection with TCP Server
+makeConnectionWithTcpServer();
 
 // HTTP Server
 
-// Connection event handler
-io.on('connection', (socket) => {
+function httpClientConnectionEventHandler(socket) {
 	sockets.push(socket);
-	console.log('Client connected. Connected:', sockets.length);
-
+	console.log('HTTP client connected. Connected:', sockets.length);
 	socket.once('disconnect', () => {
 		sockets.splice(sockets.findIndex((sckt) => sckt.id === socket.id), 1);
-		console.log('Client disconnected. Connected:', sockets.length);
+		console.log('HTTP client disconnected. Connected:', sockets.length);
 	});
-
-	// Let the client socket know that we're ready
 	socket.emit('ready');
-});
+};
+
+// Connection event handler
+io.on('connection', httpClientConnectionEventHandler);
 
 // Webpack
 
@@ -102,5 +118,5 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Create server listener
-const port = 4932;
+const port = 4934;
 server.listen(port, () => console.log(`Server listening on port ${port}`));
