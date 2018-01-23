@@ -157,9 +157,9 @@ function watchCatalogServices() {
 
 // Function calls
 
-// watchRegister(); // Not working
-// watchDeregister(); // Not working
-watchCatalogServices(); // Working
-// watchAgentServices();// Not working
+watchRegister(); // Not working
+watchDeregister(); // Not working
+// watchCatalogServices(); // Working
+watchAgentServices();// Not working
 setTimeout(register, 1000);
 setTimeout(deregister, 2000);
