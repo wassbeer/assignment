@@ -1,11 +1,11 @@
 // dependencies
 const express = require('express'),
+	http = require('http'),
 	debug = require('debug')('server'),
 	path = require('path'),
-	http = require('http'),
 	socketio = require('socket.io'),
 	net = require('net'),
-	request = require('request'),
+	consul = require('consul')(),
 	JsonSocket = require('json-socket'),
 
 	// application
@@ -16,57 +16,54 @@ const express = require('express'),
 
 // TCP Client
 
-function makeConnectionWithTcpServer() {
-	request('http://localhost:8500/v1/agent/services', (err, response, body) => {
-		if (err) {
-			console.log(err);
-		}
-		let services = JSON.parse(body),
-			serviceNames = Object.keys(services);
-		if (serviceNames.length) { // Checking existence of service(s)
-			tcpPort = services[serviceNames[serviceNames.length - 1]].Port;
-			tcpClient.connect(tcpPort, '127.0.0.1', (err) => {
-				if (err) { console.log(err); }
-				console.log('TCP client connected to TCP server on port ' + tcpPort);
-			});
-		} else { // Keep trying to retreive a service
-			console.log("There is no service registered yet");
-			setTimeout(makeConnectionWithTcpServer, 4000);
+let serviceNames = ['service'];
+
+function watchServices () {
+	var watch = consul.watch({
+		method: consul.catalog.node.services,
+		options: { node: process.env.COMPUTERNODE } // computer node 'Diànnâo'
+	});
+	watch.on('change', (data, res) => {
+		for (service in data.Services) {
+			service = data.Services[service];
+			if (serviceNames.indexOf(service.ID) === -1) {
+				serviceNames.push(service.ID);
+				startNewTcpConnection(service);
+			}
 		}
 	});
 }
 
-function connectTcpEventHandler() {
-	console.log('connected');
+function startNewTcpConnection (data) {
+	let port = data.Port,
+		socket = new JsonSocket(new net.Socket());
+	socket.connect(port, '127.0.0.1', (err) => {
+		if (err) { console.error(err); }
+		console.log(`TCP client ${data.ID} connected to TCP server on port ${port}`);
+	});
+	socket.on('message', vehicleDataEventHandler);
+	socket.on('close', closeEventHandler);
+	socket.on('error', errorEventHandler);
 }
 
-function vehicleDataEventHandler(vehicleData) {
-	// console.log(vehicleData);
+function vehicleDataEventHandler (vehicleData) {
 	io.sockets.emit('state', vehicleData);
 };
 
-function closeEventHandler() {
-	console.log('Reconnecting...');
-	setTimeout(makeConnectionWithTcpServer, 4000);
+function closeEventHandler (socket) {
+	console.log('socket.on("close") Connection closed');
 }
 
-function errorEventHandler(err) {
+function errorEventHandler (err) {
 	console.log(err);
 }
 
-// create socket and bind callbacks
-let tcpClient = new JsonSocket(new net.Socket());
-tcpClient.on('connect', connectTcpEventHandler);
-tcpClient.on('message', vehicleDataEventHandler);
-tcpClient.on('close', closeEventHandler);
-tcpClient.on('error', errorEventHandler);
-
-// Make Connection with TCP Server
-makeConnectionWithTcpServer();
+// Watch services
+watchServices();
 
 // HTTP Server
 
-function httpClientConnectionEventHandler(socket) {
+function httpClientConnectionEventHandler (socket) {
 	sockets.push(socket);
 	console.log('HTTP client connected. Connected:', sockets.length);
 	socket.once('disconnect', () => {
@@ -105,8 +102,9 @@ if (process.env.NODE_ENV !== 'production') {
 	app.use('*', (req, res, next) => {
 		const filename = path.join(compiler.outputPath, 'index.html');
 		compiler.outputFileSystem.readFile(filename, (err, result) => {
-			if (err)
+			if (err) {
 				return next(err);
+			}
 			res.set('content-type', 'text/html');
 			res.send(result);
 			res.end();
@@ -117,7 +115,7 @@ if (process.env.NODE_ENV !== 'production') {
 	app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'dist/index.html')));
 }
 
-// Create server listener
-server.listen(() => {
+// Create HTTP server listener
+server.listen(5555, () => {
 	console.log('HTTP server opened on', server.address());
-})
+});

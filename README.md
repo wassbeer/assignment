@@ -16,30 +16,15 @@ Install Consul
 
 `https://www.consul.io/intro/getting-started/install.html`
 
-Run the HTTP server, the TCP server and Consul
+Run the Consul agent, the HTTP server and the TCP server
 
-`npm run consul`
+`consul agent -dev -config-dir=/etc/consul.d`
 `npm run http` 
 `npm run tcp`
 
 ## Dependencies & Technologies
 
 NPM packages:
-* request
+* consul
 * json-socket
 * socket.io
-
-Node.js modules:
-* net
-* http 
-
-## Assignment Requirements Developed
-
-Obligatory:
-* Your modified back-end needs three services, a HTTP server (consuming the data), a TCP server (production the data) and the (third-party) service discovery service
-* The TCP server registers its port in the service discovery
-* The TCP server generates the vehicle data and streams it over a TCP connection
-* The HTTP server, hosting the web client, connects to this TCP server and receives its data
-
-Optional:
-* Make the HTTP server reconnect with the TCP server after the connection is dropped (implement a reconnection strategy)

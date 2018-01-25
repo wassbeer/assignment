@@ -7,7 +7,6 @@
     "start": "SET NODE_ENV=development && nodemon src/server/main.js",
     "http": "SET NODE_ENV=development && nodemon src/server/main.js",
     "tcp": "nodemon src/server/tcp.js",
-    "consul": " consul agent -dev -config-dir=/etc/consul.d",
     "build": "NODE_ENV=production && npm run clean && webpack -p",
     "test": "",
     "clean": "rimraf dist"
