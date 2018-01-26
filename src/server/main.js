@@ -8,7 +8,7 @@ const express = require('express'),
 	consul = require('consul')(),
 	JsonSocket = require('json-socket'),
 
-	// application
+	// Application
 	app = express(),
 	server = http.Server(app),
 	io = socketio.listen(server),
@@ -18,10 +18,10 @@ const express = require('express'),
 
 let serviceNames = ['service'];
 
-function watchServices () {
+function watchServices() { // 1. Watch services catalog
 	var watch = consul.watch({
 		method: consul.catalog.node.services,
-		options: { node: process.env.COMPUTERNODE } // computer node 'Diànnâo'
+		options: { node: process.env.COMPUTERNODE }
 	});
 	watch.on('change', (data, res) => {
 		for (service in data.Services) {
@@ -34,27 +34,41 @@ function watchServices () {
 	});
 }
 
-function startNewTcpConnection (data) {
+function startNewTcpConnection(data) { // 2. Upon discovery of a new service, start new TCP socket connection
 	let port = data.Port,
 		socket = new JsonSocket(new net.Socket());
 	socket.connect(port, '127.0.0.1', (err) => {
 		if (err) { console.error(err); }
 		console.log(`TCP client ${data.ID} connected to TCP server on port ${port}`);
+		watchService(data);
 	});
 	socket.on('message', vehicleDataEventHandler);
 	socket.on('close', closeEventHandler);
 	socket.on('error', errorEventHandler);
 }
 
-function vehicleDataEventHandler (vehicleData) {
+function watchService(service) { // 3. Watch a specific service after connecting
+	var watch = consul.watch({
+		method: consul.health.service,
+		options: { service: `${service.ID}` }
+	});
+	watch.on('change', (data, res) => {
+		return data.length > 0 ?
+			console.log(`${service.ID} is healthy`) :
+			(console.log(`${service.ID} deregistered`),
+				serviceNames.splice(serviceNames.indexOf(service.ID), 1));
+	});
+}
+
+function vehicleDataEventHandler(vehicleData) {
 	io.sockets.emit('state', vehicleData);
 };
 
-function closeEventHandler (socket) {
-	console.log('socket.on("close") Connection closed');
+function closeEventHandler(socket) {
+	console.log('Socket connection closed');
 }
 
-function errorEventHandler (err) {
+function errorEventHandler(err) {
 	console.log(err);
 }
 
@@ -63,7 +77,7 @@ watchServices();
 
 // HTTP Server
 
-function httpClientConnectionEventHandler (socket) {
+function httpClientConnectionEventHandler(socket) {
 	sockets.push(socket);
 	console.log('HTTP client connected. Connected:', sockets.length);
 	socket.once('disconnect', () => {
@@ -116,6 +130,6 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Create HTTP server listener
-server.listen(5555, () => {
+server.listen(() => {
 	console.log('HTTP server opened on', server.address());
 });

@@ -57,7 +57,7 @@ function listNode() {
 // }]
 
 
-function listNodeServices() {
+function listNodeServices () {
 	consul.catalog.node.services('Diànnâo', function(err, result) {
 		if (err) throw err;
 		console.log(result)
@@ -90,7 +90,7 @@ function listNodeServices() {
 // }
 // }
 
-function listCatalogServicesOnNode() {
+function listCatalogServicesOnNode () {
 	consul.catalog.service.nodes('example', function(err, result) {
 		if (err) throw err;
 		console.log(result)
@@ -101,33 +101,53 @@ function listCatalogServicesOnNode() {
 
 // []
 
-function register() {
+function register () {
 	consul.agent.service.register({ name: `${serviceName}`, port: 5678 }, function(err) {
 		if (err) throw err;
 		console.log('register example service');
 	});
 }
 
-function deregister() {
+function deregister () {
 	consul.agent.service.deregister(`${serviceName}`, function(err) {
 		if (err) throw err;
 		console.log('deregister example service');
 	});
 }
 
+function returnServiceHealth () {
+consul.health.service(`${serviceName}`, function(err, result) {
+  if (err) throw err;
+  console.log(result)
+});
+}
+
 // npm consul watch
 
-function watchRegister() {
+function watchHealth () {
+	var watch = consul.watch({
+		method: consul.health.service,
+		options: { service: `${serviceName}` }
+	});
+	watch.on('change', function (data, res) {
+		console.log('change data:', data);
+	});
+	watch.on('error', function(err) {
+  console.log('error:', err);
+});
+}
+
+function watchRegister () {
 	var watch = consul.watch({
 		method: consul.agent.service.register,
 		options: { name: `${serviceName}` }
 	});
-	watch.on('change', function(data, res) {
+	watch.on('change', function (data, res) {
 		console.log('change data:', data);
 	});
 }
 
-function watchDeregister() {
+function watchDeregister () {
 	var watch = consul.watch({
 			method: consul.agent.service.deregister,
 			options: { id: `${serviceName}` }
@@ -137,29 +157,31 @@ watch.on('change', function(data, res) {
 });
 }
 
-function watchAgentServices() {
+function watchAgentServices () {
 	var watch = consul.watch({ method: consul.agent.service.list });
-	watch.on('change', function(data, res) {
+	watch.on('change', function (data, res) {
 		console.log('change data:', data);
 	});
 }
 
-function watchCatalogServices() {
+function watchCatalogServices () {
 	var watch = consul.watch({
 		method: consul.catalog.node.services,
 		options: { node: 'Diànnâo' }
 	});
 	watch.on('change', (data, res) => {
-		console.log('change catalog data')
+		console.log('change catalog data');
 		console.log(data);
-	})
+	});
 }
 
 // Function calls
 
-watchRegister(); // Not working
-watchDeregister(); // Not working
+// watchRegister(); // Not working
+// watchDeregister(); // Not working
+// watchAgentServices();// Not working
 // watchCatalogServices(); // Working
-watchAgentServices();// Not working
+watchHealth() // working
 setTimeout(register, 1000);
+setTimeout(returnServiceHealth, 1500);
 setTimeout(deregister, 2000);
