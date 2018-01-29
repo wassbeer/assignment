@@ -49,10 +49,11 @@ function startNewTcpConnection(data) { // 2. Upon discovery of a new service, st
 
 function watchService(service) { // 3. Watch a specific service after connecting
 	var watch = consul.watch({
-		method: consul.health.service,
+		method: consul.catalog.service.nodes,
 		options: { service: `${service.ID}` }
 	});
 	watch.on('change', (data, res) => {
+		console.log(data)
 		return data.length > 0 ?
 			console.log(`${service.ID} is healthy`) :
 			(console.log(`${service.ID} deregistered`),
