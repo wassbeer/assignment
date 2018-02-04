@@ -2,12 +2,13 @@
 
 // dependencies
 const express = require('express'),
+	os = require('os'),
 	http = require('http'),
 	debug = require('debug')('server'),
 	path = require('path'),
 	socketio = require('socket.io'),
 	net = require('net'),
-	consul = require('consul')(),
+	consul = require('consul')({ host: process.env.CONSUL_ADDR }),
 	JsonSocket = require('json-socket'),
 
 	// Application
@@ -19,30 +20,36 @@ const express = require('express'),
 // TCP Client
 
 let serviceNames = ['service'],
-service;
+	service;
 
 function watchServices() { // 1. Watch services catalog
-	var watch = consul.watch({
-		method: consul.catalog.node.services,
-		options: { node: process.env.COMPUTERNODE }
-	});
-	watch.on('change', (data, res) => {
-		for (service in data.Services) {
-			service = data.Services[service];
-			if (serviceNames.indexOf(service.ID) === -1) {
-				serviceNames.push(service.ID);
-				startNewTcpConnection(service);
+	consul.catalog.node.list(function(err, result) { 
+		if (err) throw err;
+		console.log('Consul node: ' + result[0]['Node']); // Retreive consul node
+		let watch = consul.watch({
+			method: consul.catalog.node.services,
+			options: { node: result[0]['Node'] } // Services found on node
+		});
+		watch.on('change', (data, res) => {
+			if (data) {
+				for (service in data.Services) {
+					service = data.Services[service];
+					if (serviceNames.indexOf(service.ID) === -1) {
+						serviceNames.push(service.ID);
+						startNewTcpConnection(service);
+					}
+				}
 			}
-		}
+		});
 	});
 }
 
 function startNewTcpConnection(data) { // 2. Upon discovery of a new service, start new TCP socket connection
 	let port = data.Port,
 		socket = new JsonSocket(new net.Socket());
-	socket.connect(port, '127.0.0.1', (err) => {
+	socket.connect(port, (err) => {
 		if (err) { console.error(err); }
-		console.log(`TCP client ${data.ID} connected to TCP server on port ${port}`);
+		console.log(`TCP client connected to TCP server via Consul ${data.ID} on port ${port}`);
 		watchService(data);
 	});
 	socket.on('message', vehicleDataEventHandler);

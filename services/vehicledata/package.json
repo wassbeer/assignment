@@ -1,0 +1,29 @@
+{
+  "name": "ViriCiti_Assignment",
+  "version": "1.0.2",
+  "description": "Full webpack configured Node.js, Express, Socket.io, React and Less project",
+  "scripts": {
+    "start": "node src/tcp.js",
+    "test": "",
+    "clean": "rimraf dist"
+  },
+  "author": "Dave Bitter",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^1.12.1"
+  },
+  "dependencies": {
+    "config": "^1.26.2",
+    "consul": "^0.30.0",
+    "csv-parse": "^2.0.0",
+    "eslint": "^4.6.0",
+    "eslint-config-standard": "^10.2.1",
+    "eslint-plugin-import": "^2.7.0",
+    "eslint-plugin-node": "^5.1.1",
+    "eslint-plugin-promise": "^3.5.0",
+    "eslint-plugin-standard": "^3.0.1",
+    "express": "^4.16.2",
+    "json-socket": "^0.3.0",
+    "underscore": "^1.8.3"
+  }
+}

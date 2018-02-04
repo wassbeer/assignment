@@ -2,11 +2,25 @@
 
 This repository contains a Viriciti Example Application built as an assignment in the application process. 
 
-The application generates vehicle data on a TCP server. The vehicle data is upon generation sent to a TCP-client, which is an HTTP server. The data are rendered on the HTTP client. The ports listened to on the TCP server and connected with on the TCP client are registered on and retrieved from a service discovery service using Consul.io. 
+The app generates vehicle data on a TCP server. The vehicle data is upon generation sent to a TCP-client, which is an HTTP server. The data are rendered on the HTTP client. The ports listened to on the TCP server and connected with on the TCP client are registered on and retrieved from a service discovery service using Consul.io. 
 
 The application is built in a microservices architecture in order to enable scaling up towards multiple TCP servers and clients.
 
-## Setup
+## Running - Dockerized
+
+Run the Consul agent, the HTTP server and the Vehicle Data service with docker-compose
+
+`docker-compose up`
+
+Run multiple instances of the Vehicle Data service
+
+`docker-compose up --scale tcpserver=5`
+
+Run multiple instances of the HTTP server
+
+`docker-compose up --scale tcpserver=3`
+
+## Running - Manually
 
 Install all the dependencies
 

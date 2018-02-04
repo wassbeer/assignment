@@ -1,0 +1,41 @@
+version: "3"
+services:
+	consul:
+		command: -server -bootstrap -ui-dir /ui
+		image: progrium/consul:latest
+		ports:
+		- 53
+		- 8300
+		- 8301
+		- 8302
+		- 8400
+		- 8500
+		restart: always
+	tcpserver:
+		build: 
+			context: ./services/vehicledata
+			dockerfile: Dockerfile
+		network_mode: "host"
+		depends_on:
+			- consul
+			- tcpclient
+		environment:
+			# Running in VM
+			- CONSUL_ADDR=172.23.0.2
+			# # Running on pc
+			# CONSUL_ADDR=127.0.0.1
+	tcpclient:
+		build: 
+			context: ./services/http
+			dockerfile: Dockerfile
+		network_mode: 'host'
+		depends_on: 
+			- consul
+		environment:
+			- NODE_ENV='development'
+			# Running in VM
+			- CONSUL_ADDR=172.23.0.2
+			# # Running on pc
+			# CONSUL_ADDR=127.0.0.1
+
+

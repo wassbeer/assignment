@@ -1,6 +1,8 @@
+'use strict';
+
 // Dependencies
 const net = require('net'),
-	consul = require('consul')(),
+	consul = require('consul')({ host: process.env.CONSUL_ADDR }),
 	JsonSocket = require('json-socket'),
 	creatVehicle = require('./lib/vehicle'),
 	path = require('path');
@@ -10,7 +12,7 @@ let server = net.createServer(),
 	clients = [],
 	serviceName;
 
-function startTcpServer () {
+function startTcpServer() {
 	server.listen(() => {
 		console.log('TCP server opened server on', server.address());
 		serviceName = `Service ${server.address().port}`;
@@ -19,7 +21,7 @@ function startTcpServer () {
 			console.log('register service');
 		});
 	});
-	server.on('connection', (socket) => { 	// connection with client event handler
+	server.on('connection', (socket) => { // connection with client event handler
 		socket = new JsonSocket(socket);
 		clients.push(socket);
 		socket.on('close', () => {
@@ -33,15 +35,15 @@ function startTcpServer () {
 	});
 }
 
-function closeTcpServer () {
+function closeTcpServer() {
 	for (let i in clients) {
-		clients[i].end(); 	// ending socket connections with TCP client
+		clients[i].end(); // ending socket connections with TCP client
 	}
-	consul.agent.service.deregister(`${serviceName}`, (err) => { 	// deregistering service
+	consul.agent.service.deregister(`${serviceName}`, (err) => { // deregistering service
 		if (err) throw err;
 		console.log('deregister service ' + serviceName);
 	});
-	vehicle.end(); 	// ending incoming data from vehicle module
+	vehicle.end(); // ending incoming data from vehicle module
 	server.close(() => {
 		console.log('server closed.');
 		server.unref();
@@ -52,11 +54,11 @@ function closeTcpServer () {
 startTcpServer();
 
 // Staging server close
-setTimeout(closeTcpServer, 20000);
+setTimeout(closeTcpServer, 60000);
 
 // Start vehicle data
 const startVehicle = () => {
-	return creatVehicle({ file: path.resolve(__dirname, '../../meta/route.csv') });
+	return creatVehicle({ file: path.resolve(__dirname, '../meta/route.csv') });
 };
 
 // Init vehicle

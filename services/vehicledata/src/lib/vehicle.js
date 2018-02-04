@@ -6,7 +6,7 @@ fs = require("fs");
 
 parse = require("csv-parse");
 
-({Writable} = require("stream"));
+({ Writable } = require("stream"));
 
 FILE = "../../../meta/route.csv";
 
@@ -25,8 +25,7 @@ OPERATIONS = {
 	}
 };
 
-PARAMS = [
-	{
+PARAMS = [{
 		label: "time",
 		intake: parseFloat,
 		operation: OPERATIONS.newDate,
@@ -44,7 +43,7 @@ PARAMS = [
 		label: "gps",
 		intake: null,
 		operation: OPERATIONS.splitGPS,
-		init: function({gps}) {
+		init: function({ gps }) {
 			return OPERATIONS.splitGPS(gps);
 		}
 	},
@@ -79,7 +78,7 @@ getTimeout = function(curr, prev) {
 };
 
 getInitialState = function(info, params) {
-	return _.reduce(params, function(state, {label, init}) {
+	return _.reduce(params, function(state, { label, init }) {
 		// console.log(label, init(info));
 		state[label] = init(info);
 		return state;
@@ -90,13 +89,13 @@ getNewState = function(state, info, params) {
 	var labels, newState, timeout;
 	labels = _.pluck(params, "label");
 	timeout = state.time;
-	return newState = _.object(params, _.map(params, function({label, operation}) {}));
+	return newState = _.object(params, _.map(params, function({ label, operation }) {}));
 };
 
 Vehicle = class Vehicle extends Writable {
 	constructor({
-			params: params1
-		}) {
+		params: params1
+	}) {
 		super({
 			objectMode: true
 		});
@@ -108,7 +107,7 @@ Vehicle = class Vehicle extends Writable {
 
 	_write(info, e, cb) {
 		var timeout;
-		info = _.reduce(this.params, function(obj, {label, intake}) {
+		info = _.reduce(this.params, function(obj, { label, intake }) {
 			obj[label] = intake ? intake(info[label]) : info[label];
 			return obj;
 		}, {});
@@ -121,7 +120,7 @@ Vehicle = class Vehicle extends Writable {
 		timeout = getTimeout(info, this.latest);
 		return setTimeout(() => {
 			var state;
-			state = _.reduce(this.params, (obj, {label, operation}) => {
+			state = _.reduce(this.params, (obj, { label, operation }) => {
 				obj[label] = operation(info[label], this.latest[label], this.state[label]);
 				this.emit(label, obj[label]);
 				return obj;

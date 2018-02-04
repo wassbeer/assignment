@@ -2,10 +2,10 @@
   "name": "ViriCiti_Assignment",
   "version": "1.0.2",
   "description": "Full webpack configured Node.js, Express, Socket.io, React and Less project",
-  "main": "./src/server/index.js",
   "scripts": {
-    "start": "SET NODE_ENV=development && nodemon src/server/main.js",
+    "start": "nodemon src/server/main.js",
     "build": "NODE_ENV=production && npm run clean && webpack -p",
+    "http" : "SET NODE_ENV=development && nodemon src/server/main.js",
     "test": "",
     "clean": "rimraf dist"
   },
