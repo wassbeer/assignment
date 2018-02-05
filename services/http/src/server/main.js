@@ -34,7 +34,7 @@ function watchServices() { // 1. Watch services catalog
 			if (data) {
 				for (service in data.Services) {
 					service = data.Services[service];
-					if (serviceNames.indexOf(service.ID) === -1) {
+					if (serviceNames.indexOf(service.ID) === -1 && service.ID !== 'consul') {
 						serviceNames.push(service.ID);
 						startNewTcpConnection(service);
 					}
@@ -64,7 +64,7 @@ function watchService(service) { // 3. Watch a specific service after connecting
 	});
 	watch.on('change', (data, res) => {
 		return data.length > 0 ?
-			console.log(`${service.ID} is healthy`) :
+			console.log(`${service.ID} is running`) :
 			(console.log(`${service.ID} deregistered`),
 				serviceNames.splice(serviceNames.indexOf(service.ID), 1));
 	});

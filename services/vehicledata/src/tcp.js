@@ -48,13 +48,14 @@ function closeTcpServer() {
 		console.log('server closed.');
 		server.unref();
 	});
-}
+};
 
 // starting server
 startTcpServer();
 
-// Staging server close
+// Staging server close and restart
 setTimeout(closeTcpServer, 60000);
+setTimeout(startTcpServer, 65000);
 
 // Start vehicle data
 const startVehicle = () => {

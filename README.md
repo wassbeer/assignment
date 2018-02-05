@@ -42,3 +42,7 @@ NPM packages:
 * consul
 * json-socket
 * socket.io
+
+## Demo
+
+Please check out the presentation at: http://bit.ly/2s8IBMX
