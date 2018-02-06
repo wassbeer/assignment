@@ -15,47 +15,59 @@ let server = net.createServer(),
 function startTcpServer() {
 	server.listen(() => {
 		console.log('TCP server opened server on', server.address());
+
+		// Register service in consul
 		serviceName = `Service ${server.address().port}`;
 		consul.agent.service.register({ name: `${serviceName}`, port: server.address().port }, (err) => {
 			if (err) throw err;
 			console.log('register service');
 		});
 	});
+
+	// initiate JSON socket
 	server.on('connection', (socket) => { // connection with client event handler
 		socket = new JsonSocket(socket);
 		clients.push(socket);
 		socket.on('close', () => {
 			clients.splice(clients.indexOf(socket), 1);
 		});
+
+		// send vehicle data
 		vehicle.on('state', (state) => {
+			state['service'] = serviceName;
 			socket.sendMessage(
-				state // + serviceName // testing whether all services reach HTTP client
+				state
 			);
 		});
 	});
 }
 
 function closeTcpServer() {
+	
+	// ending socket connections with TCP client
 	for (let i in clients) {
-		clients[i].end(); // ending socket connections with TCP client
+		clients[i].end();
 	}
-	consul.agent.service.deregister(`${serviceName}`, (err) => { // deregistering service
+	
+	// deregistering service
+	consul.agent.service.deregister(`${serviceName}`, (err) => { 
 		if (err) throw err;
 		console.log('deregister service ' + serviceName);
 	});
-	vehicle.end(); // ending incoming data from vehicle module
+
+	// closing the server
 	server.close(() => {
 		console.log('server closed.');
-		server.unref();
 	});
 };
 
 // starting server
 startTcpServer();
 
-// Staging server close and restart
+// Staging server restart and close
 setTimeout(closeTcpServer, 60000);
 setTimeout(startTcpServer, 65000);
+setTimeout(closeTcpServer, 100000);
 
 // Start vehicle data
 const startVehicle = () => {
